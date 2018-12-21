@@ -10,7 +10,7 @@ fi
 for cmd in parted mkfs.ext2 mkfs.xfs git rsync; do
 	which $cmd >/dev/null 2>&1
 	if [ $? -ne 0 ]; then
-		echo "The $cmd command is required for this script to complete. Please install parted and try again."
+		echo "The $cmd command is required for this script to complete. Please install $cmd and try again."
 		exit 1
 	fi
 done

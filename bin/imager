@@ -1,0 +1,38 @@
+#!/bin/sh
+
+which aws >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+	echo "The aws command is required for this script to complete. Please install and configure aws-cli and try again."
+	exit 1
+fi
+
+aws_do() {
+	aws $*
+	if [ $? -ne 0 ]; then
+		echo "Error running AWS command -- exiting."
+		exit 1
+	fi
+}
+
+if [ -z "$REGION" ]; then
+	export REGION=us-east-1
+	echo "No region environment variable set; defaulting to us-east-1."
+fi
+
+if [ -z "SNAPSHOT_ID" ]; then
+	echo "Please export a SNAPSHOT_ID environment variable specifying the snapshot to turn into an AMI."
+	exit 1
+fi
+
+if [ -z "AMI_ARCH" ]; then 
+	export AMI_ARCH="x86_64"
+fi
+
+echo -n "Creating AMI, architecture: $AMI_ARCH."
+
+if [ -z "AMI_NAME" ]; then
+	echo "Please export an AMI_NAME environment variable specifying the name to be set for your new AMI."
+	exit 1
+fi
+
+aws_do ec2 register-image --block-device-mappings DeviceName="/dev/xvda,Ebs={SnapshotId=$SNAPSHOT_ID}"  --architecture $AMI_ARCH --ena-support --name $AMI_NAME --root-device-name /dev/xvda --virtualization-type hvm --region $REGION
