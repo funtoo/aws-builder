@@ -1,0 +1,11 @@
+#!/sbin/openrc-run
+
+depend() {
+	return
+}
+
+start() {
+	einfo "Enabling Amazon ENA support"
+	modprobe -q ena
+	eend 0
+}

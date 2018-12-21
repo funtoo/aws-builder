@@ -1,0 +1,73 @@
+#!/bin/bash
+
+BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+if [ ! -e /root/stage3-latest.tar.xz ]; then
+	echo "Please make sure that /root/stage3-latest.tar.xz exists and is the stage3 you want to use for your AMI."
+	exit 1
+fi
+
+for cmd in parted mkfs.ext2 mkfs.xfs git rsync; do
+	which $cmd >/dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		echo "The $cmd command is required for this script to complete. Please install parted and try again."
+		exit 1
+	fi
+done
+
+if [ -d /mnt/gentoo ]; then
+	umount -Rf /mnt/gentoo
+fi
+
+parted --script /dev/xvdb \
+mklabel msdos \
+mkpart primary ext2 0% 10% \
+mkpart primary linux-swap 10% 30% \
+mkpart primary xfs 30% 100% \
+set 1 boot on || exit 1
+if [ ! -d /root/ego ]; then
+ ( cd /root; git clone https://github.com/funtoo/ego )
+fi
+mkfs.ext2 -F /dev/xvdb1 || exit 1
+mkswap -f /dev/xvdb2 || exit 2
+mkfs.xfs -f /dev/xvdb3 || exit 3
+ego sync || exit 4
+install -d /mnt/gentoo
+mount /dev/xvdb3 /mnt/gentoo || exit 4
+install -d /mnt/gentoo/boot
+mount /dev/xvdb1 /mnt/gentoo/boot || exit 5
+tar xpf /root/stage3-latest.tar.xz -C /mnt/gentoo || exit 7
+cp /etc/resolv.conf /mnt/gentoo/etc/ || exit 7
+mount --rbind /dev /mnt/gentoo/dev || exit 8
+mount --rbind /proc /mnt/gentoo/proc || exit 9
+mount --rbind /sys /mnt/gentoo/sys || exit 10
+install -d /mnt/gentoo/var/git/meta-repo || exit 10
+mount --bind /var/git/meta-repo /mnt/gentoo/var/git/meta-repo || exit 10
+rsync -av $BIN_DIR/../etc/ /mnt/gentoo/etc/
+# create script to run in chroot:
+cat > /mnt/gentoo/chroot.sh << 'chroot_EOF'
+#!/bin/bash
+ego sync --config-only || exit 11
+emerge grub sys-block/parted sudo || exit 12
+emerge -u1 openssl openssh || exit 13
+rc-update add metalog default
+useradd -m ec2-user
+usermod -a -G wheel ec2-user
+sed -i -e 's/^# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/g' /etc/sudoers || exit 13
+grub-install --target=i386-pc --no-floppy /dev/xvdb || exit 13
+rc-update add amazon-ena boot
+rc-update add amazon-ec2 boot
+rc-update add netif.eth0 default
+rm -f /etc/resolv.conf
+rm -f /chroot.sh
+chroot_EOF
+chmod +x /mnt/gentoo/chroot.sh
+chroot /mnt/gentoo /chroot.sh
+umount /mnt/gentoo/var/git/meta-repo || exit 44
+rm -rf /mnt/gentoo/var/git/meta-repo || exit 45
+cd /root/ego
+export ROOT=/mnt/gentoo
+./ego boot --device-shift=xvdb,xvda update || exit 31
+if [ $? -ne 0 ]; then
+	exit $?
+fi

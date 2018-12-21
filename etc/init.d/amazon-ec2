@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+
+depend() {
+	before hostname
+	need netif.eth0
+}
+
+start() {
+	local instance_id=$(wget -t 2 -T 5 -q -O - http://169.254.169.254/latest/meta-data/instance-id)
+	[ -f "/var/lib/amazon-ec2" ] && [ "$(cat /var/lib/amazon-ec2)" = "$instance_id" ] && exit 0
+	einfo "Fetching metadata from EC2 servers"
+	local hostname=$(wget -t 2 -T 5 -q -O - http://169.254.169.254/latest/meta-data/local-hostname)
+	sed -i -e "/^hostname=/chostname=$hostname" /etc/conf.d/hostname
+	mkdir -p /home/ec2-user/.ssh
+	local keys=$(wget -t 2 -T 5 -q -O - http://169.254.169.254/latest/meta-data/public-keys/ | cut -d = -f 1 | xargs echo)
+	[ -n "${keys}" ] && \
+		wget -t 2 -T 5 -q -O - $(for key in $keys; do echo "http://169.254.169.254/latest/meta-data/public-keys/$key/openssh-key"; done) \
+		>> /home/ec2-user/.ssh/authorized_keys \
+		2>/dev/null
+	chown -R ec2-user:ec2-user /home/ec2-user/.ssh
+	chmod -R go-rwx /home/ec2-user/.ssh
+	echo "$instance_id" > "/var/lib/amazon-ec2"
+	eend 0
+}
+

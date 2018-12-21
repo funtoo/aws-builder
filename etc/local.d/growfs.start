@@ -1,0 +1,9 @@
+#!/bin/bash
+echo -n "Adjusting root filesystem to occupy full size of volume... "
+root_part=$(cat /proc/mounts | awk '{if ($2 == "/") print $1;}')
+root_dev=/dev/$(lsblk -no -pkname $root_part)
+parted $root_dev resizepart 3 yes 100% > /dev/null 2>&1
+xfs_growfs / >/dev/null 2>&1
+echo "done."
+rm /etc/local.d/growfs.start
+

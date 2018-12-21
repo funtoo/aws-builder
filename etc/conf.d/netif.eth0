@@ -1,0 +1,2 @@
+rc_need="amazon-ena"
+template="dhcpcd"
