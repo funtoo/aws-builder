@@ -1,1 +1,2 @@
 bootdev=nvme0n1
+bootp=${bootdev}p

@@ -1,1 +1,2 @@
 bootdev=xvda
+bootp=${bootdev}
