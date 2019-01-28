@@ -64,10 +64,12 @@ sed -i -e 's/^# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/g'
 grub-install --target=i386-pc --no-floppy /dev/xvdb || exit 13
 rc-update add amazon-ena boot
 rc-update add amazon-ec2 boot
+cd /etc/init.d; ln -s netif.tmpl netif.eth0 || exit 13
 rc-update add netif.eth0 default
 rm -f /etc/resolv.conf
 rm -f /chroot.sh
 rm -rf /var/git/meta-repo
+
 chroot_EOF
 chmod +x /mnt/gentoo/chroot.sh
 chroot /mnt/gentoo /chroot.sh
