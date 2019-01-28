@@ -5,7 +5,7 @@
 #
 # <fs>		 <mountpoint>  <type>  <opts>		  <dump/pass>
 
-/dev/xvda1	  /boot			ext2	noauto,noatime 1 2
-/dev/xvda2	  none			swap	sw			   0 0
-/dev/xvda3	  /				xfs		noatime		   0 1
+/dev/__DISK__1	  /boot			ext2	noauto,noatime 1 2
+/dev/__DISK__2	  none			swap	sw			   0 0
+/dev/__DISK__3	  /				xfs		noatime		   0 1
 
