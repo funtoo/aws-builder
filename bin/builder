@@ -31,7 +31,6 @@ fi
 mkfs.ext2 -F /dev/xvdb1 || exit 1
 mkswap -f /dev/xvdb2 || exit 2
 mkfs.xfs -f /dev/xvdb3 || exit 3
-ego sync || exit 4
 install -d /mnt/gentoo
 mount /dev/xvdb3 /mnt/gentoo || exit 4
 install -d /mnt/gentoo/boot
