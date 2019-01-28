@@ -80,3 +80,4 @@ export ROOT=/mnt/gentoo
 if [ $? -ne 0 ]; then
 	exit $?
 fi
+umount -R /mnt/gentoo
