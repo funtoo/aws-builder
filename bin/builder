@@ -62,8 +62,6 @@ rm -rf /var/git/meta-repo
 chroot_EOF
 chmod +x /mnt/gentoo/chroot.sh
 chroot /mnt/gentoo /chroot.sh
-umount /mnt/gentoo/var/git/meta-repo || exit 44
-rm -rf /mnt/gentoo/var/git/meta-repo || exit 45
 cd /root/ego
 export ROOT=/mnt/gentoo
 ./ego boot --device-shift=xvdb,xvda update || exit 31
