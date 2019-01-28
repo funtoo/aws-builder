@@ -41,13 +41,11 @@ cp /etc/resolv.conf /mnt/gentoo/etc/ || exit 7
 mount --rbind /dev /mnt/gentoo/dev || exit 8
 mount --rbind /proc /mnt/gentoo/proc || exit 9
 mount --rbind /sys /mnt/gentoo/sys || exit 10
-install -d /mnt/gentoo/var/git/meta-repo || exit 10
-mount --bind /var/git/meta-repo /mnt/gentoo/var/git/meta-repo || exit 10
 rsync -av $BIN_DIR/../etc/ /mnt/gentoo/etc/
 # create script to run in chroot:
 cat > /mnt/gentoo/chroot.sh << 'chroot_EOF'
 #!/bin/bash
-ego sync --config-only || exit 11
+ego sync || exit 11
 emerge grub sys-block/parted sudo || exit 12
 emerge -u1 openssl openssh || exit 13
 rc-update add metalog default
@@ -60,6 +58,7 @@ rc-update add amazon-ec2 boot
 rc-update add netif.eth0 default
 rm -f /etc/resolv.conf
 rm -f /chroot.sh
+rm -rf /var/git/meta-repo
 chroot_EOF
 chmod +x /mnt/gentoo/chroot.sh
 chroot /mnt/gentoo /chroot.sh
