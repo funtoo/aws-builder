@@ -4,6 +4,8 @@ BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 CURDATE=$(date -I)
 if [ -z "$1" ]; then
     echo "Please specify an image type, such as 'epyc' or 't2' as a parameter."
+    echo -n "Available builds: "
+    ls $BIN_DIR/../builds/
     exit 1
 fi
 
@@ -11,6 +13,14 @@ if [ ! -e "$BIN_DIR/../etc/motd.$1" ]; then
     echo "Can't find etc/motd.$1 in aws-builder directory. Please create such a file using etc/motd as a template."
     exit 1
 fi
+
+if [ ! -e $BIN_DIR/../builds/$1 ]; then
+    echo "Can't find specified build in builds/ directory: $1. Exiting."
+    exit 1
+fi
+
+# get bootdev variable.
+source $BIN_DIR/../builds/$1
 
 if [ ! -e /root/stage3-latest.tar.xz ]; then
 	echo "Please make sure that /root/stage3-latest.tar.xz exists and is the stage3 you want to use for your AMI."
@@ -25,11 +35,25 @@ for cmd in parted mkfs.ext2 mkfs.xfs git rsync; do
 	fi
 done
 
+# Some images use /dev/xvd* for disks, and others use nvme. Here, we detect the current system's approach, so
+# we know which disk to partition and use.
+
+if [ -n "$( lsblk | grep xvdb )" ]; then
+        outdev=xvdb
+        outp=$outdev
+elif [ -n "$( lsblk | grep nvme1n1 )" ]; then
+        outdev=nvme1n1
+        outp=${outdev}p
+else
+        echo "Error: could not find suitable block device for creating image. Exiting."
+        exit 1
+fi
+
 if [ -d /mnt/gentoo ]; then
 	umount -Rf /mnt/gentoo
 fi
 
-parted --script /dev/xvdb \
+parted --script /dev/${outdev} \
 mklabel msdos \
 mkpart primary ext2 0% 10% \
 mkpart primary linux-swap 10% 30% \
@@ -38,13 +62,13 @@ set 1 boot on || exit 1
 if [ ! -d /root/ego ]; then
  ( cd /root; git clone https://github.com/funtoo/ego )
 fi
-mkfs.ext2 -F /dev/xvdb1 || exit 1
-mkswap -f /dev/xvdb2 || exit 2
-mkfs.xfs -f /dev/xvdb3 || exit 3
+mkfs.ext2 -F /dev/${outp}1 || exit 1
+mkswap -f /dev/${outp}2 || exit 2
+mkfs.xfs -f /dev/${outp}3 || exit 3
 install -d /mnt/gentoo
-mount /dev/xvdb3 /mnt/gentoo || exit 4
+mount /dev/${outp}3 /mnt/gentoo || exit 4
 install -d /mnt/gentoo/boot
-mount /dev/xvdb1 /mnt/gentoo/boot || exit 5
+mount /dev/${outp}1 /mnt/gentoo/boot || exit 5
 tar xpf /root/stage3-latest.tar.xz -C /mnt/gentoo || exit 7
 cp /etc/resolv.conf /mnt/gentoo/etc/ || exit 7
 mount --rbind /dev /mnt/gentoo/dev || exit 8
@@ -52,8 +76,14 @@ mount --rbind /proc /mnt/gentoo/proc || exit 9
 mount --rbind /sys /mnt/gentoo/sys || exit 10
 rsync -av $BIN_DIR/../etc/ /mnt/gentoo/etc/ --exclude motd.*
 # create script to run in chroot:
+cat > /mnt/gentoo/chroot-vars.sh << chroot_EOF
+outdev=$outdev
+outp=$outp
+bootdev=$boodev
+chroot_EOF
 cat > /mnt/gentoo/chroot.sh << 'chroot_EOF'
 #!/bin/bash
+source /chroot-vars.sh; rm /chroot-vars.sh
 ego sync || exit 11
 emerge grub sys-block/parted sudo || exit 12
 emerge -u1 openssl openssh || exit 13
@@ -61,7 +91,7 @@ rc-update add metalog default
 useradd -m ec2-user
 usermod -a -G wheel ec2-user
 sed -i -e 's/^# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/g' /etc/sudoers || exit 13
-grub-install --target=i386-pc --no-floppy /dev/xvdb || exit 13
+grub-install --target=i386-pc --no-floppy /dev/${outdev} || exit 13
 rc-update add amazon-ena boot
 rc-update add amazon-ec2 boot
 cd /etc/init.d; ln -s netif.tmpl netif.eth0 || exit 13
@@ -69,14 +99,13 @@ rc-update add netif.eth0 default
 rm -f /etc/resolv.conf
 rm -f /chroot.sh
 rm -rf /var/git/meta-repo
-
 chroot_EOF
 chmod +x /mnt/gentoo/chroot.sh
 chroot /mnt/gentoo /chroot.sh
 cat $BIN_DIR/../etc/motd.$1 | sed -e "s/__CURDATE__/$CURDATE/g" > /mnt/gentoo/etc/motd
 cd /root/ego
 export ROOT=/mnt/gentoo
-./ego boot --device-shift=xvdb,xvda update || exit 31
+./ego boot --device-shift=$outdev,$bootdev update || exit 31
 if [ $? -ne 0 ]; then
 	exit $?
 fi

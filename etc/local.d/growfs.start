@@ -6,4 +6,3 @@ parted $root_dev resizepart 3 yes 100% > /dev/null 2>&1
 xfs_growfs / >/dev/null 2>&1
 echo "done."
 rm /etc/local.d/growfs.start
-
