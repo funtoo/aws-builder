@@ -3,9 +3,9 @@
  // for the best possible performance by taking advantage of all CPU
  // instruction sets offered by Amazon Web Services.
 
- >>> Release:                       Funtoo Linux 1.2-release-ec2
- >>> Version:                       27-Nov-2018
- >>> Subarch:                       amd64-zen (EPYC)
+ >>> Release:                       Funtoo Linux 1.3-release-ec2
+ >>> Version:                       __CURDATE__
+ >>> Subarch:                       intel64-haswell (Intel Haswell)
  >>> Created by:                    Daniel Robbins <drobbins@funtoo.org>
  >>> Open Source Community:         Funtoo Linux (https://www.funtoo.org)
  >>> Commercial Support:            BreezyOps (https://breezyops.com)

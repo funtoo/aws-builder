@@ -1,0 +1,16 @@
+
+ // Welcome to Funtoo Linux for Amazon EC2! This image has been optimized
+ // for the best possible performance by taking advantage of all CPU
+ // instruction sets offered by Amazon Web Services.
+
+ >>> Release:                       Funtoo Linux 1.3-release-ec2
+ >>> Version:                       __CURDATE__
+ >>> Subarch:                       amd64-zen (EPYC)
+ >>> Created by:                    Daniel Robbins <drobbins@funtoo.org>
+ >>> Open Source Community:         Funtoo Linux (https://www.funtoo.org)
+ >>> Commercial Support:            BreezyOps (https://breezyops.com)
+ >>> Bug reports:                   https://bugs.funtoo.org
+ >>> Support email:                 support@funtoo.org
+
+ NOTE: This message can be removed by deleting /etc/motd.
+

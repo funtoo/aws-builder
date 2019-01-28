@@ -1,6 +1,16 @@
 #!/bin/bash
 
 BIN_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+CURDATE=$(date -I)
+if [ -z "$1" ]; then
+    echo "Please specify an image type, such as 'epyc' or 't2' as a parameter."
+    exit 1
+fi
+
+if [ ! -e "$BIN_DIR/../etc/motd.$1" ]; then
+    echo "Can't find etc/motd.$1 in aws-builder directory. Please create such a file using etc/motd as a template."
+    exit 1
+fi
 
 if [ ! -e /root/stage3-latest.tar.xz ]; then
 	echo "Please make sure that /root/stage3-latest.tar.xz exists and is the stage3 you want to use for your AMI."
@@ -40,7 +50,7 @@ cp /etc/resolv.conf /mnt/gentoo/etc/ || exit 7
 mount --rbind /dev /mnt/gentoo/dev || exit 8
 mount --rbind /proc /mnt/gentoo/proc || exit 9
 mount --rbind /sys /mnt/gentoo/sys || exit 10
-rsync -av $BIN_DIR/../etc/ /mnt/gentoo/etc/
+rsync -av $BIN_DIR/../etc/ /mnt/gentoo/etc/ --exclude motd.*
 # create script to run in chroot:
 cat > /mnt/gentoo/chroot.sh << 'chroot_EOF'
 #!/bin/bash
@@ -61,6 +71,7 @@ rm -rf /var/git/meta-repo
 chroot_EOF
 chmod +x /mnt/gentoo/chroot.sh
 chroot /mnt/gentoo /chroot.sh
+cat $BIN_DIR/../etc/motd.$1 | sed -e "s/__CURDATE__/$CURDATE/g" > /mnt/gentoo/etc/motd
 cd /root/ego
 export ROOT=/mnt/gentoo
 ./ego boot --device-shift=xvdb,xvda update || exit 31
