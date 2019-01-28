@@ -7,7 +7,7 @@ if [ $? -ne 0 ]; then
 fi
 
 aws_do() {
-	aws $*
+	aws "$@"
 	if [ $? -ne 0 ]; then
 		echo "Error running AWS command -- exiting."
 		exit 1
@@ -24,7 +24,7 @@ if [ -z "SNAPSHOT_ID" ]; then
 	exit 1
 fi
 
-if [ -z "AMI_ARCH" ]; then 
+if [ -z "$AMI_ARCH" ]; then
 	export AMI_ARCH="x86_64"
 fi
 
@@ -35,4 +35,4 @@ if [ -z "AMI_NAME" ]; then
 	exit 1
 fi
 
-aws_do ec2 register-image --block-device-mappings DeviceName="/dev/xvda,Ebs={SnapshotId=$SNAPSHOT_ID}"  --architecture $AMI_ARCH --ena-support --name $AMI_NAME --root-device-name /dev/xvda --virtualization-type hvm --region $REGION
+aws_do ec2 register-image --block-device-mappings DeviceName="/dev/xvda,Ebs={SnapshotId=$SNAPSHOT_ID}"  --architecture $AMI_ARCH --ena-support --name "$AMI_NAME" --root-device-name /dev/xvda --virtualization-type hvm --region $REGION
