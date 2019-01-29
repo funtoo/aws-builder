@@ -93,6 +93,7 @@ useradd -m ec2-user
 usermod -a -G wheel ec2-user
 sed -i -e 's/^# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/g' /etc/sudoers || exit 13
 sed -i -e "s/__DISK__/$bootp/g" /etc/fstab || exit 13
+sed -i -e "s/__DISK__/$bootp/g" /etc/boot.conf || exit 13
 grub-install --target=i386-pc --no-floppy /dev/${outdev} || exit 13
 rc-update add amazon-ena boot
 rc-update add amazon-ec2 boot
