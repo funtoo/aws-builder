@@ -5,6 +5,6 @@
 #
 # <fs>		 <mountpoint>  <type>  <opts>		  <dump/pass>
 
-LABEL=boot	  /boot			ext2	noauto,noatime 1 2
-LABEL=swap	  none			swap	sw			   0 0
-LABEL=root	  /				xfs		noatime		   0 1
+LABEL=BOOT	  /boot			ext2	noauto,noatime 1 2
+LABEL=SWAP	  none			swap	sw			   0 0
+LABEL=ROOT	  /				xfs		noatime		   0 1
