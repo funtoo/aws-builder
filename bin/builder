@@ -63,8 +63,11 @@ if [ ! -d /root/ego ]; then
  ( cd /root; git clone https://github.com/funtoo/ego )
 fi
 mkfs.ext2 -F /dev/${outp}1 || exit 1
-mkswap -f /dev/${outp}2 || exit 2
+mkswap -L SWAP -f /dev/${outp}2 || exit 2
 mkfs.xfs -f /dev/${outp}3 || exit 3
+xfs_admin -L ROOT /dev/${outp}3 || exit 3
+e2label /dev/${outp}1 BOOT || exit 3
+
 install -d /mnt/gentoo
 mount /dev/${outp}3 /mnt/gentoo || exit 4
 install -d /mnt/gentoo/boot
@@ -92,8 +95,6 @@ rc-update add metalog default
 useradd -m ec2-user
 usermod -a -G wheel ec2-user
 sed -i -e 's/^# %wheel ALL=(ALL) NOPASSWD: ALL/%wheel ALL=(ALL) NOPASSWD: ALL/g' /etc/sudoers || exit 13
-sed -i -e "s/__DISK__/$bootp/g" /etc/fstab || exit 13
-sed -i -e "s/__DISK__/$bootp/g" /etc/boot.conf || exit 13
 grub-install --target=i386-pc --no-floppy /dev/${outdev} || exit 13
 rc-update add amazon-ena boot
 rc-update add amazon-ec2 boot
@@ -108,7 +109,7 @@ chroot /mnt/gentoo /chroot.sh
 cat $BIN_DIR/../etc/motd.$1 | sed -e "s/__CURDATE__/$CURDATE/g" > /mnt/gentoo/etc/motd
 cd /root/ego
 export ROOT=/mnt/gentoo
-./ego boot --device-shift=$outdev,$bootdev update || exit 31
+./ego boot update || exit 31
 if [ $? -ne 0 ]; then
 	exit $?
 fi
